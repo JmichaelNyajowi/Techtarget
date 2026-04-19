@@ -71,17 +71,17 @@ func checkFirmwareHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID := r.URL.Query().Get("device_id")
+	deviceID := r.URL.Query().Get("serial_number")
 	if deviceID == "" {
-		http.Error(w, "Missing required query parameter: device_id", http.StatusBadRequest)
+		http.Error(w, "Missing required query parameter: serial_number", http.StatusBadRequest)
 		return
 	}
 
 	// Query firmware for the specific device
 	var dbVersion string
-	err := db.Get(&dbVersion, "SELECT firmware FROM device_info WHERE device_id = $1", deviceID)
+	err := db.Get(&dbVersion, "SELECT firmware FROM device_info WHERE serial_number = $1", deviceID)
 	if err != nil {
-		log.Printf("DB error for device_id=%s: %v", deviceID, err)
+		log.Printf("DB error for serial_number=%s: %v", deviceID, err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
