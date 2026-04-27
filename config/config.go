@@ -1,31 +1,44 @@
 package config
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 )
 
 type Config struct {
-    DBHost string
-    DBPort string
-    DBUser string
-    DBPass string
-    DBName string
+	DBHost string
+	DBPort string
+	DBUser string
+	DBPass string
+	DBName string
+
+	VaultAddr  string
+	VaultToken string
+	VaultPath  string
 }
 
-func Load() Config {
-    return Config{
-        DBHost: os.Getenv("DB_HOST"),
-        DBPort: os.Getenv("DB_PORT"),
-        DBUser: os.Getenv("DB_USER"),
-        DBPass: os.Getenv("DB_PASS"),
-        DBName: os.Getenv("DB_NAME"),
-    }
+// LoadVaultConfig loads only the Vault connection details from environment
+func LoadVaultConfig() Config {
+	return Config{
+		VaultAddr:  os.Getenv("VAULT_ADDR"),
+		VaultToken: os.Getenv("VAULT_TOKEN"),
+		VaultPath:  "secret/data/techtarget_project/db",
+	}
+}
+
+// WithDBCredentials returns a new Config with DB credentials from Vault
+func (c Config) WithDBCredentials(creds map[string]string) Config {
+	c.DBHost = creds["host"]
+	c.DBPort = creds["port"]
+	c.DBUser = creds["user"]
+	c.DBPass = creds["password"]
+	c.DBName = creds["dbname"]
+	return c
 }
 
 func (c Config) DSN() string {
-    return fmt.Sprintf(
-        "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-        c.DBHost, c.DBPort, c.DBUser, c.DBPass, c.DBName,
-    )
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.DBHost, c.DBPort, c.DBUser, c.DBPass, c.DBName,
+	)
 }

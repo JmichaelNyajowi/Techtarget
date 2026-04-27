@@ -5,24 +5,17 @@ import (
 	"testing"
 )
 
-func TestLoad(t *testing.T) {
-	// Set environment variables for the test
-	os.Setenv("DB_HOST", "localhost")
-	os.Setenv("DB_PORT", "5432")
-	os.Setenv("DB_USER", "bankii")
-	os.Setenv("DB_PASS", "NYAJOWI")
-	os.Setenv("DB_NAME", "techtarget_project")
+func TestLoadVaultConfig(t *testing.T) {
+	os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
+	os.Setenv("VAULT_TOKEN", "hvs.testtoken")
 
-	cfg := Load()
+	cfg := LoadVaultConfig()
 
-	if cfg.DBHost != "localhost" {
-		t.Errorf("expected DBHost to be localhost, got %s", cfg.DBHost)
+	if cfg.VaultAddr != "http://127.0.0.1:8200" {
+		t.Errorf("expected VaultAddr to be http://127.0.0.1:8200, got %s", cfg.VaultAddr)
 	}
-	if cfg.DBPort != "5432" {
-		t.Errorf("expected DBPort to be 5432, got %s", cfg.DBPort)
-	}
-	if cfg.DBUser != "bankii" {
-		t.Errorf("expected DBUser to be bankii, got %s", cfg.DBUser)
+	if cfg.VaultToken != "hvs.testtoken" {
+		t.Errorf("expected VaultToken to be hvs.testtoken, got %s", cfg.VaultToken)
 	}
 }
 
@@ -40,5 +33,26 @@ func TestDSN(t *testing.T) {
 
 	if got != expected {
 		t.Errorf("expected DSN:\n%s\ngot:\n%s", expected, got)
+	}
+}
+
+func TestWithDBCredentials(t *testing.T) {
+	cfg := Config{}
+
+	creds := map[string]string{
+		"host":     "localhost",
+		"port":     "5432",
+		"user":     "bankii",
+		"password": "NYAJOWI",
+		"dbname":   "techtarget_project",
+	}
+
+	cfg = cfg.WithDBCredentials(creds)
+
+	if cfg.DBHost != "localhost" {
+		t.Errorf("expected DBHost localhost, got %s", cfg.DBHost)
+	}
+	if cfg.DBPass != "NYAJOWI" {
+		t.Errorf("expected DBPass NYAJOWI, got %s", cfg.DBPass)
 	}
 }
