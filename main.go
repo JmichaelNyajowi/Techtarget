@@ -16,26 +16,31 @@ func main() {
 	// Load Vault connection details from environment
 	cfg := config.LoadVaultConfig()
 
-	// Connect to Vault and fetch DB credentials
+	// Connect to Vault
 	vaultClient, err := vault.New(cfg.VaultAddr, cfg.VaultToken)
 	if err != nil {
 		log.Fatalf("Failed to connect to Vault: %v", err)
 	}
 
-	creds, err := vaultClient.GetDBCredentials(cfg.VaultPath)
+	// Fetch DB credentials from Vault
+	creds, err := vaultClient.GetDBCredentials(cfg.VaultDBPath)
 	if err != nil {
 		log.Fatalf("Failed to fetch DB credentials from Vault: %v", err)
 	}
-
-	// Inject DB credentials into config
 	cfg = cfg.WithDBCredentials(creds)
+
+	// Fetch universal provisioning key from Vault
+	universalKey, err := vaultClient.GetUniversalKey(cfg.VaultUniversalPath)
+	if err != nil {
+		log.Fatalf("Failed to fetch universal key from Vault: %v", err)
+	}
 
 	// Connect to database
 	database := db.Connect(cfg.DSN())
 	defer database.Close()
 
-	// Set up router and server
-	mux := router.Setup(database)
+	// Set up router
+	mux := router.Setup(database, vaultClient, universalKey)
 
 	srv := &http.Server{
 		Addr:         ":8080",

@@ -1,24 +1,37 @@
 package models
 
-//Firmware 
+// --- Firmware ---
 
 type FirmwareUpdateResponse struct {
-    Status              bool `json:"status"`
-    CurrentFirmware     string `json:"current_firmware"`
-    NextFirmwareVersion string `json:"next_firmware_version"`
+	Status              bool   `json:"status"`
+	CurrentFirmware     string `json:"current_firmware"`
+	NextFirmwareVersion string `json:"next_firmware_version"`
 }
 
 type FirmwareUpToDateResponse struct {
-    Status          bool `json:"status"`
-    CurrentFirmware string `json:"current_firmware"`
+	Status          bool   `json:"status"`
+	CurrentFirmware string `json:"current_firmware"`
+}
+
+// --- Provisioning ---
+
+type ProvisionRequest struct {
+	SerialNumber string `json:"serial_number"`
+	Model        string `json:"model"`
+	Firmware     string `json:"firmware"`
+	UniversalKey string `json:"universal_key"`
+}
+
+type ProvisionResponse struct {
+	Status bool   `json:"status"`
+	APIKey string `json:"api_key"`
 }
 
 // --- Telemetry ---
 
 type DeviceInfo struct {
-	Serial   string `json:"serial"`
-	Model    string `json:"model"`
-	Firmware string `json:"firmware"`
+	Serial string `json:"serial"`
+	APIKey string `json:"api_key"`
 }
 
 type TelemetryData struct {
@@ -34,7 +47,6 @@ type TelemetryRequest struct {
 }
 
 type TelemetryResponse struct {
-	Status       bool `json:"status"`
+	Status       bool   `json:"status"`
 	SerialNumber string `json:"serial_number"`
-	Message      string `json:"message"`
 }

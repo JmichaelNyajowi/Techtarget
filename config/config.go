@@ -12,21 +12,21 @@ type Config struct {
 	DBPass string
 	DBName string
 
-	VaultAddr  string
-	VaultToken string
-	VaultPath  string
+	VaultAddr        string
+	VaultToken       string
+	VaultDBPath      string
+	VaultUniversalPath string
 }
 
-// LoadVaultConfig loads only the Vault connection details from environment
 func LoadVaultConfig() Config {
 	return Config{
-		VaultAddr:  os.Getenv("VAULT_ADDR"),
-		VaultToken: os.Getenv("VAULT_TOKEN"),
-		VaultPath:  "secret/data/techtarget_project/db",
+		VaultAddr:          os.Getenv("VAULT_ADDR"),
+		VaultToken:         os.Getenv("VAULT_TOKEN"),
+		VaultDBPath:        "secret/data/techtarget_project/db",
+		VaultUniversalPath: "secret/data/techtarget_project/universal",
 	}
 }
 
-// WithDBCredentials returns a new Config with DB credentials from Vault
 func (c Config) WithDBCredentials(creds map[string]string) Config {
 	c.DBHost = creds["host"]
 	c.DBPort = creds["port"]

@@ -20,7 +20,6 @@ func (h *TelemetryHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode JSON body
 	var req models.TelemetryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
@@ -33,28 +32,23 @@ func (h *TelemetryHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "info.serial is required", http.StatusBadRequest)
 		return
 	}
-	if req.Info.Model == "" {
-		http.Error(w, "info.model is required", http.StatusBadRequest)
-		return
-	}
-	if req.Info.Firmware == "" {
-		http.Error(w, "info.firmware is required", http.StatusBadRequest)
+	if req.Info.APIKey == "" {
+		http.Error(w, "info.api_key is required", http.StatusBadRequest)
 		return
 	}
 
-	// Upsert device_info — insert if new device, update if existing
-	_, err := h.DB.Exec(`
-    INSERT INTO device_info (serial_number, model, firmware, last_seen)
-    VALUES ($1, $2, $3, NOW())
-    ON CONFLICT (serial_number)
-    DO UPDATE SET 
-        model = EXCLUDED.model, 
-        firmware = EXCLUDED.firmware,
-        last_seen = NOW()
-`, req.Info.Serial, req.Info.Model, req.Info.Firmware)
+	// Fetch stored API key for this device
+	var storedAPIKey string
+	err := h.DB.Get(&storedAPIKey, "SELECT api_key FROM device_info WHERE serial_number = $1", req.Info.Serial)
 	if err != nil {
-		log.Printf("DB error upserting device_info for serial_number=%s: %v", req.Info.Serial, err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("DB error fetching device serial_number=%s: %v", req.Info.Serial, err)
+		http.Error(w, "Device not found", http.StatusNotFound)
+		return
+	}
+
+	// Validate API key
+	if req.Info.APIKey != storedAPIKey {
+		http.Error(w, "Unauthorized: invalid API key", http.StatusUnauthorized)
 		return
 	}
 
@@ -69,14 +63,19 @@ func (h *TelemetryHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update last_seen
+	_, err = h.DB.Exec("UPDATE device_info SET last_seen = NOW() WHERE serial_number = $1", req.Info.Serial)
+	if err != nil {
+		log.Printf("DB error updating last_seen for serial_number=%s: %v", req.Info.Serial, err)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	resp := models.TelemetryResponse{
 		Status:       true,
 		SerialNumber: req.Info.Serial,
-		Message:      "Telemetry recorded and device info updated",
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Printf("Failed to encode response: %v", err)
+		log.Printf("Failed to encode telemetry response: %v", err)
 	}
 }
